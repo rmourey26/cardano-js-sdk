@@ -1,16 +1,15 @@
-
-import type Transport from "@ledgerhq/hw-transport";
-import type { Observable } from "rxjs";
-import { from } from "rxjs";
 import { Cardano } from '@cardano-sdk/core';
-import TransportNodeHid from "@ledgerhq/hw-transport-node-hid-noevents";
-import TransportWebHID from "@ledgerhq/hw-transport-webhid";
-import { registerTransportModule } from "@ledgerhq/live-common/lib/hw";
-import { getCryptoCurrencyById } from "@ledgerhq/live-common/lib/currencies"
-import { withDevice } from "@ledgerhq/live-common/lib/hw/deviceAccess";
-import getAppAndVersion from "@ledgerhq/live-common/lib/hw/getAppAndVersion";
-import getAddress from "@ledgerhq/live-common/lib/hw/getAddress";
 import { GroupedAddress, KeyAgentType } from './types';
+import { from } from 'rxjs';
+import { getCryptoCurrencyById } from '@ledgerhq/live-common/lib/currencies';
+import { registerTransportModule } from '@ledgerhq/live-common/lib/hw';
+import { withDevice } from '@ledgerhq/live-common/lib/hw/deviceAccess';
+import TransportNodeHid from '@ledgerhq/hw-transport-node-hid-noevents';
+import TransportWebHID from '@ledgerhq/hw-transport-webhid';
+import getAddress from '@ledgerhq/live-common/lib/hw/getAddress';
+import getAppAndVersion from '@ledgerhq/live-common/lib/hw/getAppAndVersion';
+import type { Observable } from 'rxjs';
+import type Transport from '@ledgerhq/hw-transport';
 
 export interface InMemoryLedgerKeyAgentProps {
   networkId: Cardano.NetworkId;
@@ -20,7 +19,7 @@ export interface InMemoryLedgerKeyAgentProps {
 
 export interface FromExtendedPublicKeyProps {
   networkId: Cardano.NetworkId;
-  extendedPublicKey: string,
+  extendedPublicKey: string;
   accountIndex?: number;
 }
 
@@ -33,7 +32,7 @@ export interface ExtendedPublicKeyResult {
 
 export enum TransportType {
   WebHid = 'webhid',
-  NodeHid = 'nodehid',
+  NodeHid = 'nodehid'
 }
 
 export interface InitiateTransportProps {
@@ -47,11 +46,7 @@ export class InMemoryLedgerKeyAgent {
   readonly #knownAddresses: GroupedAddress[];
   #activeTransport: Transport;
 
-  constructor({
-    networkId,
-    accountIndex,
-    knownAddresses,
-  }: InMemoryLedgerKeyAgentProps) {
+  constructor({ networkId, accountIndex, knownAddresses }: InMemoryLedgerKeyAgentProps) {
     super();
     this.#accountIndex = accountIndex;
     this.#networkId = networkId;
@@ -79,10 +74,9 @@ export class InMemoryLedgerKeyAgent {
   }
 
   // TODO - this probably should be moved to ./utils
-  static initiateTransport({
-    transportType,
-  }: InitiateTransportProps): void {
+  static initiateTransport({ transportType }: InitiateTransportProps): void {
     registerTransportModule({
+      disconnect: (): Promise<void> => Promise.resolve(),
       id: 'hid',
       open: (device?: string): Promise<Transport> => {
         // Use webhid for web based apps or nodehid for node based apps
@@ -93,58 +87,54 @@ export class InMemoryLedgerKeyAgent {
 
         // Create transport for new device or recover existing one by device ID
         return device ? transportMethod.open(device) : transportMethod.create();
-      },
-      disconnect: (): Promise<void> => Promise.resolve(),
+      }
     });
   }
 
   static getOpenedDeviceAppAndVersion(deviceId: string): Observable<{
-    name: string,
-    version: string,
-    flags: number | Buffer,
+    name: string;
+    version: string;
+    flags: number | Buffer;
   }> {
-    /** subscribe(next => appVersion, error)
+    /**
+     * subscribe(next => appVersion, error)
+     *
      * @returns {name: 'Cardano ADA', version: '2.4.1', flags: Uint8Array(1)} // Cardano App started on device
      * @returns {name: 'BOLOS', version: '2.1.0-rc3', flags: Uint8Array(1)} // No apps running on device
-     ** Transport not initiated
+     *Transport not initiated
      * @throws
      * {
      *   message: "Can't find handler to open undefined"
      *   name: "CantOpenDevice"
      * }
-     ** Transport initiated / device not connected - popup will appear. Since there are no connected devices you will get error on popup close.
+     *Transport initiated / device not connected - popup will appear. Since there are no connected devices you will get error on popup close.
      * @throws
      * {
      *   message: "Access denied to use Ledger device"
      *   name: "CantOpenDevice"
      * }
      */
-    return withDevice(deviceId)((transport: Transport) => {
-      return from(
-        getAppAndVersion(transport)
-      )
-    })
+    return withDevice(deviceId)((transport: Transport) => from(getAppAndVersion(transport)));
   }
 
-  #getExtendedPublicKey({
-    deviceId: string,
-    derivationPath: string,
-  }): Observable<ExtendedPublicKeyResult> {
-    /** subscribe(next => extendedPublicKey, error)
+  #getExtendedPublicKey({ deviceId: string, derivationPath: string }): Observable<ExtendedPublicKeyResult> {
+    /**
+     * subscribe(next => extendedPublicKey, error)
+     *
      * @returns Public key for specific account index
-     ** Transport not initiated
+     *Transport not initiated
      * @throws
      * {
      *   message: "Can't find handler to open undefined"
      *   name: "CantOpenDevice"
      * }
-     ** Transport initiated / device not connected - popup will appear. Since there are no connected devices you will get error on popup close.
+     *Transport initiated / device not connected - popup will appear. Since there are no connected devices you will get error on popup close.
      * @throws
      * {
      *   message: "Access denied to use Ledger device"
      *   name: "CantOpenDevice"
      * }
-     * ** Exporting rejected on device
+     * Exporting rejected on device
      * @throws - TODO
      */
     const cardanoCurrencyData = getCryptoCurrencyById('cardano');
@@ -154,10 +144,10 @@ export class InMemoryLedgerKeyAgent {
           currency: cardanoCurrencyData,
           derivationMode: '',
           path: derivationPath,
-          verify: true,
+          verify: true
         })
       )
-    )
+    );
   }
 
   /**
@@ -172,7 +162,7 @@ export class InMemoryLedgerKeyAgent {
       accountIndex,
       extendedPublicKey,
       knownAddresses: [],
-      networkId,
+      networkId
     });
   }
 }
