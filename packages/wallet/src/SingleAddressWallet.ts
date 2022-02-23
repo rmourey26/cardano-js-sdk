@@ -27,6 +27,7 @@ import {
   createAssetsTracker,
   createBalanceTracker,
   createDelegationTracker,
+  createNftMetadataProvider,
   createTransactionsTracker,
   createUtxoTracker,
   distinctBlock,
@@ -43,7 +44,6 @@ import { Logger, dummyLogger } from 'ts-log';
 import { Observable, Subject, combineLatest, firstValueFrom, lastValueFrom, map, take } from 'rxjs';
 import { RetryBackoffConfig } from 'backoff-rxjs';
 import { TxInternals, createTransactionInternals, ensureValidityInterval } from './Transaction';
-import { createNftMetadataProvider } from './NftMetadata';
 import { isEqual } from 'lodash-es';
 
 export interface SingleAddressWalletProps {
@@ -194,6 +194,7 @@ export class SingleAddressWallet implements Wallet {
       utxo: new Set(utxo)
     });
     const { body, hash } = await createTransactionInternals({
+      auxiliaryData: props.auxiliaryData,
       certificates: props.certificates,
       changeAddress,
       inputSelection,
@@ -256,14 +257,14 @@ export class SingleAddressWallet implements Wallet {
             buildTx: async (inputSelection) => {
               this.#logger.debug('Building TX for selection constraints', inputSelection);
               const txInternals = await createTransactionInternals({
+                auxiliaryData: props.auxiliaryData,
                 certificates: props.certificates,
                 changeAddress,
                 inputSelection,
                 validityInterval,
                 withdrawals: props.withdrawals
               });
-              // TODO: add auxiliaryData support
-              return coreToCsl.tx(await this.finalizeTx(txInternals, undefined, true));
+              return coreToCsl.tx(await this.finalizeTx(txInternals, props.auxiliaryData, true));
             },
             protocolParameters
           });

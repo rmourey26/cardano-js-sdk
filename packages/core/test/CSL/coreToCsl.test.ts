@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
-import { Asset, CSL, Cardano, coreToCsl } from '../../src';
+import { Asset, CSL, Cardano, SerializationFailure, coreToCsl } from '../../src';
+import { BigNum } from '@emurgo/cardano-serialization-lib-nodejs';
 
 const txIn: Cardano.TxIn = {
   address: Cardano.Address(
@@ -121,5 +122,86 @@ describe('coreToCsl', () => {
     const witness = cslTx.witness_set().vkeys()!.get(0)!;
     expect(Buffer.from(witness.vkey().public_key().as_bytes()).toString('hex')).toBe(vkey);
     expect(witness.signature().to_hex()).toBe(signature);
+  });
+  describe('txAuxiliaryData', () => {
+    it('returns undefined for undefined data', () => expect(coreToCsl.txAuxiliaryData()).toBeUndefined());
+
+    describe('txMetadata', () => {
+      // eslint-disable-next-line unicorn/consistent-function-scoping, @typescript-eslint/no-explicit-any
+      const convertMetadatum = (metadatum: any) => {
+        const label = 123n;
+        const auxiliaryData = coreToCsl.txAuxiliaryData({ body: { blob: new Map([[label, metadatum]]) } });
+        return auxiliaryData?.metadata()?.get(BigNum.from_str(label.toString()));
+      };
+
+      const str64Len = 'looooooooooooooooooooooooooooooooooooooooooooooooooooooooooogstr';
+      const str65Len = 'loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooogstr';
+
+      it('converts number', () => {
+        const number = 1234n;
+        const metadatum = convertMetadatum(number);
+        expect(metadatum?.as_int().as_positive()?.to_str()).toBe(number.toString());
+      });
+
+      it('converts text', () => {
+        const str = str64Len;
+        const metadatum = convertMetadatum(str);
+        expect(metadatum?.as_text()).toBe(str);
+      });
+
+      it('converts list', () => {
+        const list = [str64Len, 'str2'];
+        const metadatum = convertMetadatum(list);
+        const cslList = metadatum?.as_list();
+        expect(cslList?.len()).toBe(list.length);
+        expect(cslList?.get(0).as_text()).toBe(list[0]);
+        expect(cslList?.get(1).as_text()).toBe(list[1]);
+      });
+
+      test('converts bytes', () => {
+        const bytes = Buffer.from(str64Len);
+        const metadatum = convertMetadatum(bytes);
+        expect(metadatum?.as_bytes().buffer).toEqual(bytes.buffer);
+      });
+
+      it('converts map', () => {
+        const key = new Map<Cardano.Metadatum, Cardano.Metadatum>([[567n, 'eight']]);
+        const map = new Map<Cardano.Metadatum, Cardano.Metadatum>([
+          [123n, 1234n],
+          ['key', 'value'],
+          [key, new Map<Cardano.Metadatum, Cardano.Metadatum>([[666n, 'cake']])]
+        ]);
+        const metadatum = convertMetadatum(map);
+        const cslMap = metadatum?.as_map();
+        expect(cslMap?.len()).toBe(map.size);
+        expect(cslMap?.get(convertMetadatum(123n)!).as_int().as_positive()?.to_str()).toBe('1234');
+        expect(cslMap?.get(convertMetadatum('key')!).as_text()).toBe('value');
+        expect(cslMap?.get(convertMetadatum(key)!).as_map().get_i32(666).as_text()).toBe('cake');
+      });
+
+      test('bytes too long throws error', () => {
+        const bytes = Buffer.from(str65Len, 'utf8');
+        expect(() => convertMetadatum(bytes)).toThrow(SerializationFailure.MaxLengthLimit);
+      });
+
+      it('text too long throws error', () => {
+        expect(() => convertMetadatum(str65Len)).toThrow(SerializationFailure.MaxLengthLimit);
+      });
+
+      it('bool throws error', () => {
+        expect(() => convertMetadatum(true)).toThrowError(SerializationFailure.InvalidType);
+      });
+
+      it('undefined throws error', () => {
+        // eslint-disable-next-line unicorn/no-useless-undefined
+        expect(() => convertMetadatum(undefined)).toThrowError(SerializationFailure.InvalidType);
+      });
+
+      it('null throws error', () => {
+        expect(() => convertMetadatum(null)).toThrowError(SerializationFailure.InvalidType);
+      });
+    });
+
+    it.todo('txScripts');
   });
 });
