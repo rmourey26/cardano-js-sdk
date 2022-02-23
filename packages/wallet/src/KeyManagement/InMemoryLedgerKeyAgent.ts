@@ -5,7 +5,6 @@ import { from } from "rxjs";
 import { Cardano } from '@cardano-sdk/core';
 import TransportNodeHid from "@ledgerhq/hw-transport-node-hid-noevents";
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
-import TransportNodeHid from '@ledgerhq/hw-transport-node-hid-noevents';
 import { registerTransportModule } from "@ledgerhq/live-common/lib/hw";
 import { getCryptoCurrencyById } from "@ledgerhq/live-common/lib/currencies"
 import { withDevice } from "@ledgerhq/live-common/lib/hw/deviceAccess";
