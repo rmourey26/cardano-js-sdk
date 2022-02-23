@@ -10,7 +10,8 @@ export interface SignBlobResult {
 }
 
 export enum KeyAgentType {
-  InMemory = 'InMemory'
+  InMemory = 'InMemory',
+  InMemoryLedger = 'InMemoryLedger'
 }
 
 export enum KeyType {
@@ -68,7 +69,7 @@ export interface SerializableInMemoryKeyAgentData extends SerializableKeyAgentDa
 export type SerializableKeyAgentData = SerializableInMemoryKeyAgentData;
 
 /**
- * @returns password used to decrypt root private key
+ * @returns password used to decrypt root private key 
  */
 export type GetPassword = (noCache?: true) => Promise<Uint8Array>;
 
@@ -78,7 +79,7 @@ export interface KeyAgent {
   get serializableData(): SerializableKeyAgentData;
   get knownAddresses(): GroupedAddress[];
   /**
-   * @throws AuthenticationError
+   * @throws AuthenticationError 
    */
   getExtendedAccountPublicKey(): Promise<Cardano.Bip32PublicKey>;
   /**
