@@ -1,15 +1,9 @@
+import { TransportError } from './errors';
 import { Cardano } from '@cardano-sdk/core';
-import { GroupedAddress, KeyAgentType } from './types';
-import { from } from 'rxjs';
-import { getCryptoCurrencyById } from '@ledgerhq/live-common/lib/currencies';
-import { registerTransportModule } from '@ledgerhq/live-common/lib/hw';
-import { withDevice } from '@ledgerhq/live-common/lib/hw/deviceAccess';
-import TransportNodeHid from '@ledgerhq/hw-transport-node-hid-noevents';
 import TransportWebHID from '@ledgerhq/hw-transport-webhid';
-import getAddress from '@ledgerhq/live-common/lib/hw/getAddress';
-import getAppAndVersion from '@ledgerhq/live-common/lib/hw/getAppAndVersion';
-import type { Observable } from 'rxjs';
 import type Transport from '@ledgerhq/hw-transport';
+import AppAda, { GetVersionResponse, GetExtendedPublicKeyResponse, utils } from '@cardano-foundation/ledgerjs-hw-app-cardano';
+import { GroupedAddress, KeyAgentType } from './types';
 
 export interface InMemoryLedgerKeyAgentProps {
   networkId: Cardano.NetworkId;
@@ -47,7 +41,6 @@ export class InMemoryLedgerKeyAgent {
   #activeTransport: Transport;
 
   constructor({ networkId, accountIndex, knownAddresses }: InMemoryLedgerKeyAgentProps) {
-    super();
     this.#accountIndex = accountIndex;
     this.#networkId = networkId;
     this.#knownAddresses = knownAddresses;
@@ -73,96 +66,52 @@ export class InMemoryLedgerKeyAgent {
     return this.#knownAddresses;
   }
 
-  // TODO - this probably should be moved to ./utils
-  static initiateTransport({ transportType }: InitiateTransportProps): void {
-    registerTransportModule({
-      disconnect: (): Promise<void> => Promise.resolve(),
-      id: 'hid',
-      open: (device?: string): Promise<Transport> => {
-        // Use webhid for web based apps or nodehid for node based apps
-        // WebHid - It will open device selection popup in the browser
-        // NodeHid - It will create a transport in the background and use last physically connected device
-        // TODO - Add BLE (bluetooth) support (@ledgerhq/hw-transport-web-ble & @ledgerhq/hw-transport-node-ble)
-        const transportMethod = transportType === TransportType.WebHid ? TransportWebHID : TransportNodeHid;
-
-        // Create transport for new device or recover existing one by device ID
-        return device ? transportMethod.open(device) : transportMethod.create();
-      }
-    });
-  }
-
-  static getOpenedDeviceAppAndVersion(deviceId: string): Observable<{
-    name: string;
-    version: string;
-    flags: number | Buffer;
-  }> {
-    /**
-     * subscribe(next => appVersion, error)
-     *
-     * @returns {name: 'Cardano ADA', version: '2.4.1', flags: Uint8Array(1)} // Cardano App started on device
-     * @returns {name: 'BOLOS', version: '2.1.0-rc3', flags: Uint8Array(1)} // No apps running on device
-     *Transport not initiated
-     * @throws
-     * {
-     *   message: "Can't find handler to open undefined"
-     *   name: "CantOpenDevice"
-     * }
-     *Transport initiated / device not connected - popup will appear. Since there are no connected devices you will get error on popup close.
-     * @throws
-     * {
-     *   message: "Access denied to use Ledger device"
-     *   name: "CantOpenDevice"
-     * }
-     */
-    return withDevice(deviceId)((transport: Transport) => from(getAppAndVersion(transport)));
-  }
-
-  #getExtendedPublicKey({ deviceId: string, derivationPath: string }): Observable<ExtendedPublicKeyResult> {
-    /**
-     * subscribe(next => extendedPublicKey, error)
-     *
-     * @returns Public key for specific account index
-     *Transport not initiated
-     * @throws
-     * {
-     *   message: "Can't find handler to open undefined"
-     *   name: "CantOpenDevice"
-     * }
-     *Transport initiated / device not connected - popup will appear. Since there are no connected devices you will get error on popup close.
-     * @throws
-     * {
-     *   message: "Access denied to use Ledger device"
-     *   name: "CantOpenDevice"
-     * }
-     * Exporting rejected on device
-     * @throws - TODO
-     */
-    const cardanoCurrencyData = getCryptoCurrencyById('cardano');
-    return withDevice(deviceId)((transport: Transport) =>
-      from(
-        getAddress(transport, {
-          currency: cardanoCurrencyData,
-          derivationMode: '',
-          path: derivationPath,
-          verify: true
-        })
-      )
-    );
+  // TODO - enable node based apps to establish communication using node-hid
+  // TODO - enable bluetooth communication
+  static async initiateTransport(): Promise<Transport> {
+    return await TransportWebHID.create();
   }
 
   /**
-   * @throws AuthenticationError
+   * @returns Result object containing the Ledger Cardano App version number and compatibility
    */
-  static async fromExtendedPublicKey({
-    networkId,
-    extendedPublicKey,
-    accountIndex = 0
-  }: FromExtendedPublicKeyProps): Promise<InMemoryLedgerKeyAgent> {
-    return new InMemoryLedgerKeyAgent({
-      accountIndex,
-      extendedPublicKey,
-      knownAddresses: [],
-      networkId
-    });
+  static async getAppVersion(transport: Transport): Promise<GetVersionResponse> {
+    try {
+      const appAdaConnection = new AppAda(transport);
+      return await appAdaConnection.getVersion();
+    } catch (error) {
+      if (!transport) {
+        throw new TransportError('Missing transport', error);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get a public key from the specified BIP 32 path.
+   *
+   * @param path. Path to public key which should be derived. A path must begin with `44'/1815'/account'` or `1852'/1815'/account'`, and may be up to 10 indexes long.
+   * @returns The extended public key (i.e. with chaincode) for the given path.
+   *
+   * @example
+   * ```
+   * const [{ publicKey, chainCode }] = await getExtendedPublicKey(Transport, "1852'/1815'/0'");
+   * ```
+   */
+  static async getExtendedPublicKey(
+    transport: Transport,
+    derivationPath : string
+  ): Promise<GetExtendedPublicKeyResponse> {
+    try {
+      const appAdaConnection = new AppAda(transport);
+      return await appAdaConnection.getExtendedPublicKey({
+        path: utils.str_to_path(derivationPath), // BIP32Path
+      });
+    } catch (error) {
+      if (!transport) {
+        throw new TransportError('Missing transport', error);
+      }
+      throw error;
+    }
   }
 }
