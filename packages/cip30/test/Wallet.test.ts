@@ -15,7 +15,8 @@ if (process.env.DEBUG) {
 }
 
 describe('Wallet', () => {
-  const apiMethods = [
+  const apiMethods: (keyof WalletApi)[] = [
+    'getNetworkId',
     'getBalance',
     'getChangeAddress',
     'getRewardAddresses',
@@ -65,6 +66,14 @@ describe('Wallet', () => {
 
     beforeAll(async () => {
       api = await wallet.enable(window.location.hostname);
+    });
+
+    test('getNetworkId', async () => {
+      expect(api.getNetworkId).toBeDefined();
+      expect(typeof api.getNetworkId).toBe('function');
+
+      const networkId = await api.getNetworkId();
+      expect(networkId).toEqual(0);
     });
 
     test('getUtxos', async () => {
