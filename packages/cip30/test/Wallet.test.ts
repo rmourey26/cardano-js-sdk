@@ -7,7 +7,6 @@ import { Wallet, WalletApi, WalletOptions } from '../src/Wallet';
 import { mocks } from 'mock-browser';
 const window = mocks.MockBrowser.createWindow();
 
-// todo test persistAllowList: true when design is finalised
 const options: WalletOptions = {};
 
 if (process.env.DEBUG) {
@@ -16,9 +15,9 @@ if (process.env.DEBUG) {
 
 describe('Wallet', () => {
   const apiMethods: (keyof WalletApi)[] = [
-    'getNetworkId',
     'getBalance',
     'getChangeAddress',
+    'getNetworkId',
     'getRewardAddresses',
     'getUnusedAddresses',
     'getUsedAddresses',
