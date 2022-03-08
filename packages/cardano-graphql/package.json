@@ -6,6 +6,9 @@
     "node": "^14"
   },
   "main": "dist/index.js",
+  "bin": {
+    "dgraph-projector": "./dist/DataProjection/cli.js"
+  },
   "repository": "https://github.com/input-output-hk/cardano-js-sdk/packages/cardano-graphql",
   "author": "Martynas Kazlauskas <martynas.kazlauskas@iohk.io>",
   "contributors": [
@@ -28,7 +31,8 @@
     "test:e2e": "shx echo 'test:e2e' command not implemented yet",
     "coverage": "yarn test --coverage",
     "prepack": "yarn build",
-    "test:debug": "DEBUG=true yarn test"
+    "test:debug": "DEBUG=true yarn test",
+    "cli:dgraph-projector": "ts-node --transpile-only src/DataProjection/cli.ts"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "~2.5.0",
@@ -36,19 +40,27 @@
     "@graphql-codegen/typescript-graphql-request": "~4.3.4",
     "@graphql-codegen/typescript-operations": "~2.2.4",
     "@graphql-tools/utils": "~8.6.1",
+    "@types/bunyan": "^1.8.8",
+    "@types/death": "^1.1.2",
     "npm-run-all": "^4.1.5",
-    "shx": "^0.3.3"
+    "shx": "^0.3.3",
+    "ts-node": "^10.7.0"
   },
   "dependencies": {
     "@cardano-graphql/client-ts": "~6.1.0",
     "@cardano-ogmios/client": "~5.1.0",
     "@cardano-sdk/core": "0.2.0",
+    "bunyan": "^1.8.15",
     "class-validator": "^0.13.1",
+    "clear": "^0.1.0",
+    "commander": "^9.0.0",
+    "death": "^1.1.0",
     "graphql": "~15.6.1",
     "graphql-request": "npm:graphql-request-configurable-serializer@4.0.0",
     "graphql-tag": "2.12.5",
     "json-bigint": "~1.0.0",
     "reflect-metadata": "~0.1.13",
+    "ts-log": "^2.2.4",
     "type-graphql": "~1.1.1"
   },
   "files": [
