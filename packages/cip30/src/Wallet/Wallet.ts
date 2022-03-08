@@ -49,9 +49,9 @@ export class Wallet {
   readonly name: WalletName;
   readonly icon: WalletIcon;
 
-  private allowList: string[];
-  private logger: Logger;
-  private readonly options: Required<WalletOptions>;
+  #allowList: string[];
+  #logger: Logger;
+  readonly #options: Required<WalletOptions>;
 
   private constructor(
     properties: WalletProperties,
@@ -60,12 +60,12 @@ export class Wallet {
     allowList: string[],
     options?: WalletOptions
   ) {
-    this.options = { ...defaultOptions, ...options };
+    this.#options = { ...defaultOptions, ...options };
     this.name = properties.name;
     this.apiVersion = properties.apiVersion;
     this.icon = properties.icon;
-    this.allowList = allowList;
-    this.logger = this.options.logger;
+    this.#allowList = allowList;
+    this.#logger = options?.logger || this.#options.logger;
   }
 
   public getPublicApi(hostname: string) {
@@ -100,14 +100,14 @@ export class Wallet {
   }
 
   private async allowApplication(appName: string) {
-    this.allowList.push(appName);
+    this.#allowList.push(appName);
 
     // Todo: Encrypt
 
-    await this.options.storage.set({ [this.name]: { allowList: [...this.allowList, appName] } });
-    this.logger.debug(
+    await this.#options.storage.set({ [this.name]: { allowList: [...this.#allowList, appName] } });
+    this.#logger.debug(
       {
-        allowList: this.allowList,
+        allowList: this.#allowList,
         module: 'Wallet',
         walletName: this.name
       },
@@ -125,7 +125,7 @@ export class Wallet {
    * Errors: `ApiError`
    */
   public async isEnabled(hostname: string): Promise<Boolean> {
-    return this.allowList.includes(hostname);
+    return this.#allowList.includes(hostname);
   }
 
   /**
@@ -144,8 +144,8 @@ export class Wallet {
    * Errors: `ApiError`
    */
   public async enable(hostname: string): Promise<WalletApi> {
-    if (this.allowList.includes(hostname)) {
-      this.logger.debug(
+    if (this.#allowList.includes(hostname)) {
+      this.#logger.debug(
         {
           module: 'Wallet',
           walletName: this.name

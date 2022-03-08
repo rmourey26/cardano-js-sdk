@@ -8,7 +8,7 @@ import { Cardano } from '@cardano-sdk/core';
  *
  * This result will stay the same unless the connected account has changed.
  *
- * @throws {ApiError}
+ * @throws ApiError
  */
 export type GetNetworkId = () => Promise<Cardano.NetworkId>;
 /**
@@ -21,7 +21,8 @@ export type GetNetworkId = () => Promise<Cardano.NetworkId>;
  *
  * The results can be further paginated by `paginate` if it is not `undefined`.
  *
- * @throws {ApiError | PaginateError}
+ * @throws ApiError
+ * @throws PaginateError
  */
 export type GetUtxos = (amount?: Cbor, paginate?: Paginate) => Promise<Cardano.Utxo[] | undefined>;
 
