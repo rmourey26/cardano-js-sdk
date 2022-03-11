@@ -1,16 +1,16 @@
-import { TransportError, GenericError, GenericErrorType } from './errors';
 import { Cardano } from '@cardano-sdk/core';
-import AppAda, { GetVersionResponse, utils } from '@cardano-foundation/ledgerjs-hw-app-cardano';
-import { KeyAgentBase } from './KeyAgentBase';
-import { establishDeviceConnection, createDeviceConnection, DeviceCommunicationType } from './util/deviceConnection';
+import { DeviceCommunicationType, createDeviceConnection, establishDeviceConnection } from './util/deviceConnection';
+import { GenericError, GenericErrorType, TransportError } from './errors';
 import { GroupedAddress, KeyAgentType, SerializableLedgerKeyAgentData, SignBlobResult } from './types';
+import { KeyAgentBase } from './KeyAgentBase';
+import AppAda, { GetVersionResponse, utils } from '@cardano-foundation/ledgerjs-hw-app-cardano';
 
 export interface LedgerKeyAgentProps {
   networkId: Cardano.NetworkId;
   accountIndex: number;
   knownAddresses: GroupedAddress[];
-  deviceConnection: AppAda,
-  deviceCommunicationType: DeviceCommunicationType
+  deviceConnection: AppAda;
+  deviceCommunicationType: DeviceCommunicationType;
 }
 
 export enum TransportType {
@@ -27,7 +27,13 @@ export class LedgerKeyAgent extends KeyAgentBase {
   #extendedAccountPublicKey: Cardano.Bip32PublicKey;
   #deviceConnection: AppAda;
 
-  constructor({ networkId, accountIndex, knownAddresses, deviceConnection, deviceCommunicationType }: LedgerKeyAgentProps) {
+  constructor({
+    networkId,
+    accountIndex,
+    knownAddresses,
+    deviceConnection,
+    deviceCommunicationType
+  }: LedgerKeyAgentProps) {
     super();
     this.#accountIndex = accountIndex;
     this.#networkId = networkId;
@@ -64,9 +70,9 @@ export class LedgerKeyAgent extends KeyAgentBase {
     return {
       __typename: KeyAgentType.Ledger,
       accountIndex: this.#accountIndex,
-      knownAddresses: this.#knownAddresses,
       extendedAccountPublicKey: this.#extendedAccountPublicKey,
-      networkId: this.networkId,
+      knownAddresses: this.#knownAddresses,
+      networkId: this.networkId
     };
   }
 
@@ -78,9 +84,8 @@ export class LedgerKeyAgent extends KeyAgentBase {
         throw new TransportError('Missing transport');
       }
       // Create / Check device connection with currently active transport
-      const deviceConnection = await createDeviceConnection(this.#deviceConnection.transport);
-      return deviceConnection;
-    } catch(error) {
+      return await createDeviceConnection(this.#deviceConnection.transport);
+    } catch (error) {
       // Device disconnected -> re-establish connection
       if (error.name === 'DisconnectedDeviceDuringOperation') {
         const deviceConenction = await establishDeviceConnection(this.#deviceCommunicationType);
@@ -91,44 +96,21 @@ export class LedgerKeyAgent extends KeyAgentBase {
     }
   }
 
-
-  /**
-   * @returns Result object containing the Ledger Cardano App version number and compatibility
-   */
   async getAppVersion(): Promise<GetVersionResponse> {
-    try {
-      await this.checkDeviceConnection();
-      return await this.#deviceConnection.getVersion();
-    } catch (error) {
-      throw error;
-    }
+    await this.checkDeviceConnection();
+    return await this.#deviceConnection.getVersion();
   }
 
-  /**
-   * Get a public key from the specified BIP 32 path.
-   *
-   * @param path. Path to public key which should be derived. A path must begin with `44'/1815'/account'` or `1852'/1815'/account'`, and may be up to 10 indexes long.
-   * @returns The extended public key (i.e. with chaincode) for the given path.
-   *
-   * @example
-   * ```
-   * const [{ publicKeyHex, chainCodeHex }] = await getExtendedPublicKey(Transport, "1852'/1815'/0'");
-   * ```
-   */
   async getExtendedAccountPublicKey(): Promise<Cardano.Bip32PublicKey> {
-    try {
-      await this.checkDeviceConnection();
-      const derivationPath = `1852'/1815'/${this.#accountIndex}'`;
-      const extendedPublicKey = await this.#deviceConnection.getExtendedPublicKey({
-        path: utils.str_to_path(derivationPath), // BIP32Path
-      });
-      const xPubHex = `${extendedPublicKey.publicKeyHex}${extendedPublicKey.chainCodeHex}`
-      const xPub = Cardano.Bip32PublicKey(xPubHex);
-      this.#extendedAccountPublicKey = xPub;
-      return xPub;
-    } catch (error) {
-      throw error;
-    }
+    await this.checkDeviceConnection();
+    const derivationPath = `1852'/1815'/${this.#accountIndex}'`;
+    const extendedPublicKey = await this.#deviceConnection.getExtendedPublicKey({
+      path: utils.str_to_path(derivationPath) // BIP32Path
+    });
+    const xPubHex = `${extendedPublicKey.publicKeyHex}${extendedPublicKey.chainCodeHex}`;
+    const xPub = Cardano.Bip32PublicKey(xPubHex);
+    this.#extendedAccountPublicKey = xPub;
+    return xPub;
   }
 
   async signBlob(): Promise<SignBlobResult> {

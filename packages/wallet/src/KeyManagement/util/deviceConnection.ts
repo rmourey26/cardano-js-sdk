@@ -1,41 +1,25 @@
+import { CommunicationType, DeviceType } from '../types';
+import { TransportError } from '../errors';
 import AppAda from '@cardano-foundation/ledgerjs-hw-app-cardano';
 import TransportWebHID from '@ledgerhq/hw-transport-webhid';
-import { TransportError } from '../errors';
-import { DeviceType, CommunicationType } from '../types'
 
 export interface DeviceCommunicationType {
   deviceType: DeviceType;
   communicationType: CommunicationType;
 }
 
-export const createTransport = async (activeTransport?: TransportWebHID): Promise<TransportWebHID> => {
-  let transport;
-  try {
-    if (activeTransport) {
-      transport = await TransportWebHID.open(activeTransport.device);        
-    } else {
-      transport = await TransportWebHID.request();
-    }
-    return transport
-  } catch(error) {
-    throw error;
-  }
-}
+export const createTransport = async (activeTransport?: TransportWebHID): Promise<TransportWebHID> =>
+  await (activeTransport ? TransportWebHID.open(activeTransport.device) : TransportWebHID.request());
 
 export const createDeviceConnection = async (activeTransport: TransportWebHID): Promise<AppAda> => {
-  try {
-    const deviceConnection = new AppAda(activeTransport);
-    // Perform app check to see if device can respond
-    await deviceConnection.getVersion();
-    return deviceConnection;
-  } catch(error) {
-    throw error;
-  }
-}
+  const deviceConnection = new AppAda(activeTransport);
+  // Perform app check to see if device can respond
+  return await deviceConnection.getVersion();
+};
 
 export const establishDeviceConnection = async ({
   deviceType,
-  communicationType,
+  communicationType
 }: DeviceCommunicationType): Promise<AppAda> => {
   let transport;
   if (deviceType !== DeviceType.Ledger) {
@@ -47,19 +31,19 @@ export const establishDeviceConnection = async ({
   try {
     transport = await createTransport();
     if (!transport || !transport.deviceModel) {
-      throw new TransportError('Transport failed')
+      throw new TransportError('Transport failed');
     }
-    const isSupportedLedgerModel = transport.deviceModel.id === "nanoS" || transport.deviceModel.id === "nanoX";
+    const isSupportedLedgerModel = transport.deviceModel.id === 'nanoS' || transport.deviceModel.id === 'nanoX';
     if (deviceType === DeviceType.Ledger && !isSupportedLedgerModel) {
       throw new TransportError('Ledger device model not supported');
     }
-    const deviceConnection = await createDeviceConnection(transport);
-    return deviceConnection;
-  } catch(error) {
+    return await createDeviceConnection(transport);
+  } catch (error) {
     // If transport is established we need to close it so we can recover device from previous session
     if (transport) {
-      transport.close()
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      transport.close();
     }
     throw error;
   }
-} 
+};
