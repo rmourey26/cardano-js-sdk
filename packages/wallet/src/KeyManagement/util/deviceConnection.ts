@@ -1,5 +1,12 @@
 import AppAda from '@cardano-foundation/ledgerjs-hw-app-cardano';
 import TransportWebHID from '@ledgerhq/hw-transport-webhid';
+import { TransportError } from '../errors';
+import { DeviceType, CommunicationType } from '../types'
+
+export interface DeviceCommunicationType {
+  deviceType: DeviceType;
+  communicationType: CommunicationType;
+}
 
 export const createTransport = async (activeTransport?: TransportWebHID): Promise<TransportWebHID> => {
   let transport;
@@ -26,10 +33,26 @@ export const createDeviceConnection = async (activeTransport: TransportWebHID): 
   }
 }
 
-export const establishDeviceConnection = async (): Promise<AppAda> => {
+export const establishDeviceConnection = async ({
+  deviceType,
+  communicationType,
+}: DeviceCommunicationType): Promise<AppAda> => {
   let transport;
+  if (deviceType !== DeviceType.Ledger) {
+    throw new TransportError('Device type not supported');
+  }
+  if (communicationType !== CommunicationType.Web) {
+    throw new TransportError('Communication method not supported');
+  }
   try {
     transport = await createTransport();
+    if (!transport || !transport.deviceModel) {
+      throw new TransportError('Transport failed')
+    }
+    const isSupportedLedgerModel = transport.deviceModel.id === "nanoS" || transport.deviceModel.id === "nanoX";
+    if (deviceType === DeviceType.Ledger && !isSupportedLedgerModel) {
+      throw new TransportError('Ledger device model not supported');
+    }
     const deviceConnection = await createDeviceConnection(transport);
     return deviceConnection;
   } catch(error) {

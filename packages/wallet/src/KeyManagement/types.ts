@@ -36,6 +36,16 @@ export enum AddressType {
   External = 0
 }
 
+export enum DeviceType {
+  Ledger = 'Ledger',
+  Trezor = 'Trezor'
+}
+
+export enum CommunicationType {
+  Web = 'web',
+  Node = 'node'
+}
+
 export interface AccountAddressDerivationPath {
   type: AddressType;
   index: number;

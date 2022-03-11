@@ -2,7 +2,7 @@ import { TransportError, GenericError, GenericErrorType } from './errors';
 import { Cardano } from '@cardano-sdk/core';
 import AppAda, { GetVersionResponse, utils } from '@cardano-foundation/ledgerjs-hw-app-cardano';
 import { KeyAgentBase } from './KeyAgentBase';
-import { establishDeviceConnection, createDeviceConnection } from './util/deviceConnection';
+import { establishDeviceConnection, createDeviceConnection, DeviceCommunicationType } from './util/deviceConnection';
 import { GroupedAddress, KeyAgentType, SerializableLedgerKeyAgentData, SignBlobResult } from './types';
 
 export interface LedgerKeyAgentProps {
@@ -10,6 +10,7 @@ export interface LedgerKeyAgentProps {
   accountIndex: number;
   knownAddresses: GroupedAddress[];
   deviceConnection: AppAda,
+  deviceCommunicationType: DeviceCommunicationType
 }
 
 export enum TransportType {
@@ -22,15 +23,17 @@ export class LedgerKeyAgent extends KeyAgentBase {
   readonly #networkId: Cardano.NetworkId;
   readonly #accountIndex: number;
   readonly #knownAddresses: GroupedAddress[];
+  readonly #deviceCommunicationType: DeviceCommunicationType;
   #extendedAccountPublicKey: Cardano.Bip32PublicKey;
   #deviceConnection: AppAda;
 
-  constructor({ networkId, accountIndex, knownAddresses, deviceConnection }: LedgerKeyAgentProps) {
+  constructor({ networkId, accountIndex, knownAddresses, deviceConnection, deviceCommunicationType }: LedgerKeyAgentProps) {
     super();
     this.#accountIndex = accountIndex;
     this.#networkId = networkId;
     this.#knownAddresses = knownAddresses;
     this.#deviceConnection = deviceConnection;
+    this.#deviceCommunicationType = deviceCommunicationType;
   }
 
   get networkId(): Cardano.NetworkId {
@@ -80,7 +83,7 @@ export class LedgerKeyAgent extends KeyAgentBase {
     } catch(error) {
       // Device disconnected -> re-establish connection
       if (error.name === 'DisconnectedDeviceDuringOperation') {
-        const deviceConenction = await establishDeviceConnection();
+        const deviceConenction = await establishDeviceConnection(this.#deviceCommunicationType);
         this.#deviceConnection = deviceConenction;
         return deviceConenction;
       }
