@@ -6,6 +6,7 @@ import {
   KeyAgent,
   KeyType,
   SerializableKeyAgentData,
+  SerializableLedgerKeyAgentData,
   SignBlobResult
 } from './types';
 import { CSL, Cardano } from '@cardano-sdk/core';
@@ -15,7 +16,7 @@ import { ownSignatureKeyPaths } from './util';
 export abstract class KeyAgentBase implements KeyAgent {
   abstract get networkId(): Cardano.NetworkId;
   abstract get accountIndex(): number;
-  abstract get serializableData(): SerializableKeyAgentData;
+  abstract get serializableData(): SerializableKeyAgentData | SerializableLedgerKeyAgentData;
   abstract get knownAddresses(): GroupedAddress[];
   abstract getExtendedAccountPublicKey(): Promise<Cardano.Bip32PublicKey>;
   abstract signBlob(derivationPath: AccountKeyDerivationPath, blob: HexBlob): Promise<SignBlobResult>;

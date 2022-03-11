@@ -11,7 +11,7 @@ export interface SignBlobResult {
 
 export enum KeyAgentType {
   InMemory = 'InMemory',
-  InMemoryLedger = 'InMemoryLedger'
+  Ledger = 'Ledger'
 }
 
 export enum KeyType {
@@ -66,6 +66,12 @@ export interface SerializableInMemoryKeyAgentData extends SerializableKeyAgentDa
   knownAddresses: GroupedAddress[];
 }
 
+export interface SerializableLedgerKeyAgentData extends SerializableKeyAgentDataBase {
+  __typename: KeyAgentType.Ledger;
+  knownAddresses: GroupedAddress[];
+  extendedAccountPublicKey: Cardano.Bip32PublicKey;
+}
+
 export type SerializableKeyAgentData = SerializableInMemoryKeyAgentData;
 
 /**
@@ -76,7 +82,7 @@ export type GetPassword = (noCache?: true) => Promise<Uint8Array>;
 export interface KeyAgent {
   get networkId(): Cardano.NetworkId;
   get accountIndex(): number;
-  get serializableData(): SerializableKeyAgentData;
+  get serializableData(): SerializableKeyAgentData | SerializableLedgerKeyAgentData;
   get knownAddresses(): GroupedAddress[];
   /**
    * @throws AuthenticationError
