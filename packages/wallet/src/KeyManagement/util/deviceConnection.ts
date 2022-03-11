@@ -2,6 +2,7 @@ import { CommunicationType, DeviceType } from '../types';
 import { TransportError } from '../errors';
 import AppAda from '@cardano-foundation/ledgerjs-hw-app-cardano';
 import TransportWebHID from '@ledgerhq/hw-transport-webhid';
+import type Transport from '@ledgerhq/hw-transport';
 
 export interface DeviceCommunicationType {
   deviceType: DeviceType;
@@ -11,7 +12,7 @@ export interface DeviceCommunicationType {
 export const createTransport = async (activeTransport?: TransportWebHID): Promise<TransportWebHID> =>
   await (activeTransport ? TransportWebHID.open(activeTransport.device) : TransportWebHID.request());
 
-export const createDeviceConnection = async (activeTransport: TransportWebHID): Promise<AppAda> => {
+export const createDeviceConnection = async (activeTransport: Transport): Promise<AppAda> => {
   const deviceConnection = new AppAda(activeTransport);
   // Perform app check to see if device can respond
   await deviceConnection.getVersion();
