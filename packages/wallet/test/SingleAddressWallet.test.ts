@@ -6,17 +6,22 @@ import { KeyManagement, SingleAddressWallet } from '../src';
 import { firstValueFrom, skip } from 'rxjs';
 import { getPassword, testKeyAgent } from './mocks';
 
+jest.mock('../src/KeyManagement/cip8/cip30signData');
+const { cip30signData } = jest.requireMock('../src/KeyManagement/cip8/cip30signData');
+
 describe('SingleAddressWallet', () => {
   const name = 'Test Wallet';
   const address = mocks.utxo[0][0].address;
   const rewardAccount = mocks.rewardAccount;
   let keyAgent: KeyManagement.KeyAgent;
-  let walletProvider: mocks.ProviderStub;
+  let txSubmitProvider: mocks.TxSubmitProviderStub;
+  let walletProvider: mocks.WalletProviderStub;
   let assetProvider: mocks.MockAssetProvider;
   let wallet: SingleAddressWallet;
 
   beforeEach(async () => {
     keyAgent = await testKeyAgent();
+    txSubmitProvider = mocks.mockTxSubmitProvider();
     walletProvider = mocks.mockWalletProvider();
     assetProvider = mocks.mockAssetProvider();
     const stakePoolSearchProvider = createStubStakePoolSearchProvider();
@@ -32,7 +37,7 @@ describe('SingleAddressWallet', () => {
     keyAgent.deriveAddress = jest.fn().mockResolvedValue(groupedAddress);
     wallet = new SingleAddressWallet(
       { name },
-      { assetProvider, keyAgent, stakePoolSearchProvider, timeSettingsProvider, walletProvider }
+      { assetProvider, keyAgent, stakePoolSearchProvider, timeSettingsProvider, txSubmitProvider, walletProvider }
     );
     keyAgent.knownAddresses.push(groupedAddress);
   });
@@ -99,6 +104,9 @@ describe('SingleAddressWallet', () => {
     it('timeSettings$', async () => {
       expect(await firstValueFrom(wallet.timeSettings$)).toEqual(testnetTimeSettings);
     });
+    it('syncStatus$', async () => {
+      expect(await firstValueFrom(wallet.syncStatus$)).not.toBeUndefined();
+    });
   });
 
   describe('creating transactions', () => {
@@ -164,7 +172,7 @@ describe('SingleAddressWallet', () => {
       const txPending = firstValueFrom(wallet.transactions.outgoing.pending$);
       const txInFlight = firstValueFrom(wallet.transactions.outgoing.inFlight$.pipe(skip(1)));
       await wallet.submitTx(tx);
-      expect(walletProvider.submitTx).toBeCalledTimes(1);
+      expect(txSubmitProvider.submitTx).toBeCalledTimes(1);
       expect(await txSubmitting).toBe(tx);
       expect(await txPending).toBe(tx);
       expect(await txInFlight).toEqual([tx]);
@@ -178,5 +186,10 @@ describe('SingleAddressWallet', () => {
     wallet.shutdown();
     wallet.sync();
     expect(walletProvider.ledgerTip).toHaveBeenCalledTimes(2);
+  });
+
+  it('signData calls cip30signData', async () => {
+    await wallet.signData({ payload: Cardano.util.HexBlob('abc123'), signWith: address });
+    expect(cip30signData).toBeCalledTimes(1);
   });
 });

@@ -2,7 +2,6 @@ import {
   AccountAddressDerivationPath,
   AccountKeyDerivationPath,
   GroupedAddress,
-  HexBlob,
   KeyAgent,
   KeyType,
   SerializableKeyAgentData,
@@ -10,8 +9,8 @@ import {
   SignBlobResult
 } from './types';
 import { CSL, Cardano } from '@cardano-sdk/core';
+import { STAKE_KEY_DERIVATION_PATH, ownSignatureKeyPaths } from './util';
 import { TxInternals } from '../Transaction';
-import { ownSignatureKeyPaths } from './util';
 
 export abstract class KeyAgentBase implements KeyAgent {
   abstract get networkId(): Cardano.NetworkId;
@@ -19,7 +18,7 @@ export abstract class KeyAgentBase implements KeyAgent {
   abstract get serializableData(): SerializableKeyAgentData | SerializableLedgerKeyAgentData;
   abstract get knownAddresses(): GroupedAddress[];
   abstract getExtendedAccountPublicKey(): Promise<Cardano.Bip32PublicKey>;
-  abstract signBlob(derivationPath: AccountKeyDerivationPath, blob: HexBlob): Promise<SignBlobResult>;
+  abstract signBlob(derivationPath: AccountKeyDerivationPath, blob: Cardano.util.HexBlob): Promise<SignBlobResult>;
   abstract derivePublicKey(derivationPath: AccountKeyDerivationPath): Promise<Cardano.Ed25519PublicKey>;
   abstract exportRootPrivateKey(): Promise<Cardano.Bip32PrivateKey>;
 
@@ -33,10 +32,7 @@ export abstract class KeyAgentBase implements KeyAgent {
     });
 
     // Possible optimization: memoize/cache stakeKeyCredential, because it's always the same
-    const publicStakeKey = await this.deriveCslPublicKey({
-      index: 0,
-      type: KeyType.Stake
-    });
+    const publicStakeKey = await this.deriveCslPublicKey(STAKE_KEY_DERIVATION_PATH);
     const stakeKeyCredential = CSL.StakeCredential.from_keyhash(publicStakeKey.hash());
 
     const address = CSL.BaseAddress.new(
@@ -60,7 +56,7 @@ export abstract class KeyAgentBase implements KeyAgent {
 
   async signTransaction({ body, hash }: TxInternals): Promise<Cardano.Signatures> {
     // Possible optimization is casting strings to OpaqueString types directly and skipping validation
-    const blob = HexBlob(hash.toString());
+    const blob = Cardano.util.HexBlob(hash.toString());
     const derivationPaths = ownSignatureKeyPaths(body, this.knownAddresses);
     return new Map<Cardano.Ed25519PublicKey, Cardano.Ed25519Signature>(
       await Promise.all(

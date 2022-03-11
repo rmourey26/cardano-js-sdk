@@ -14,7 +14,8 @@ export const createTransport = async (activeTransport?: TransportWebHID): Promis
 export const createDeviceConnection = async (activeTransport: TransportWebHID): Promise<AppAda> => {
   const deviceConnection = new AppAda(activeTransport);
   // Perform app check to see if device can respond
-  return await deviceConnection.getVersion();
+  await deviceConnection.getVersion();
+  return deviceConnection;
 };
 
 export const establishDeviceConnection = async ({
