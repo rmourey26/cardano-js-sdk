@@ -79,7 +79,7 @@ export interface SerializableLedgerKeyAgentData extends SerializableKeyAgentData
   extendedAccountPublicKey: Cardano.Bip32PublicKey;
 }
 
-export type SerializableKeyAgentData = SerializableInMemoryKeyAgentData;
+export type SerializableKeyAgentData = SerializableInMemoryKeyAgentData | SerializableLedgerKeyAgentData;
 
 /**
  * @returns password used to decrypt root private key
@@ -89,7 +89,7 @@ export type GetPassword = (noCache?: true) => Promise<Uint8Array>;
 export interface KeyAgent {
   get networkId(): Cardano.NetworkId;
   get accountIndex(): number;
-  get serializableData(): SerializableKeyAgentData | SerializableLedgerKeyAgentData;
+  get serializableData(): SerializableKeyAgentData;
   get knownAddresses(): GroupedAddress[];
   /**
    * @throws AuthenticationError
