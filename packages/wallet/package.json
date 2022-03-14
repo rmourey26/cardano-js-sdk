@@ -28,13 +28,18 @@
   "devDependencies": {
     "@cardano-sdk/util-dev": " 0.2.0",
     "@types/pbkdf2": "^3.1.0",
+    "dotenv": "^16.0.0",
+    "jest-webextension-mock": "^3.7.19",
+    "mock-browser": "^0.92.14",
     "shx": "^0.3.3"
   },
   "dependencies": {
     "@cardano-sdk/cip2": " 0.2.0",
+    "@cardano-sdk/cip30": " 0.2.0",
     "@cardano-sdk/core": " 0.2.0",
     "backoff-rxjs": "^6.5.7",
     "bip39": "^3.0.4",
+    "cbor": "^8.1.0",
     "chacha": "^2.1.0",
     "delay": "^5.0.0",
     "emittery": "^0.10.0",
