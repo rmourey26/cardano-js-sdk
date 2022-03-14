@@ -76,6 +76,7 @@ export interface SerializableLedgerKeyAgentData extends SerializableKeyAgentData
   __typename: KeyAgentType.Ledger;
   knownAddresses: GroupedAddress[];
   extendedAccountPublicKey: Cardano.Bip32PublicKey;
+  communicationType: CommunicationType;
 }
 
 export type SerializableKeyAgentData = SerializableInMemoryKeyAgentData | SerializableLedgerKeyAgentData;
