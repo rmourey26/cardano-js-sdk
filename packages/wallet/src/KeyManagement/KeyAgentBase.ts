@@ -9,6 +9,7 @@ import {
   SignBlobResult
 } from './types';
 import { CSL, Cardano } from '@cardano-sdk/core';
+import AppAda from '@cardano-foundation/ledgerjs-hw-app-cardano';
 import { STAKE_KEY_DERIVATION_PATH, ownSignatureKeyPaths } from './util';
 import { TxInternals } from '../Transaction';
 
@@ -17,7 +18,7 @@ export abstract class KeyAgentBase implements KeyAgent {
   abstract get accountIndex(): number;
   abstract get serializableData(): SerializableKeyAgentData | SerializableLedgerKeyAgentData;
   abstract get knownAddresses(): GroupedAddress[];
-  abstract getExtendedAccountPublicKey(): Promise<Cardano.Bip32PublicKey>;
+  abstract getExtendedAccountPublicKey(deviceConnection?: AppAda): Promise<Cardano.Bip32PublicKey>;
   abstract signBlob(derivationPath: AccountKeyDerivationPath, blob: Cardano.util.HexBlob): Promise<SignBlobResult>;
   abstract derivePublicKey(derivationPath: AccountKeyDerivationPath): Promise<Cardano.Ed25519PublicKey>;
   abstract exportRootPrivateKey(): Promise<Cardano.Bip32PrivateKey>;

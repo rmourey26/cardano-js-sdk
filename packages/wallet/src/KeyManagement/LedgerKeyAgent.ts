@@ -1,9 +1,12 @@
 import { Cardano } from '@cardano-sdk/core';
-import { DeviceCommunicationType, createDeviceConnection, establishDeviceConnection } from './util/deviceConnection';
+import { DeviceCommunicationType, /*createDeviceConnection,*/ establishDeviceConnection } from './util/deviceConnection';
 import { GenericError, GenericErrorType, TransportError } from './errors';
 import { GroupedAddress, KeyAgentType, SerializableLedgerKeyAgentData, SignBlobResult } from './types';
 import { KeyAgentBase } from './KeyAgentBase';
 import AppAda, { GetVersionResponse, utils } from '@cardano-foundation/ledgerjs-hw-app-cardano';
+import TransportWebHID from '@ledgerhq/hw-transport-webhid';
+import type Transport from '@ledgerhq/hw-transport';
+import { CommunicationType, DeviceType } from './types';
 
 export interface LedgerKeyAgentProps {
   networkId: Cardano.NetworkId;
@@ -76,35 +79,73 @@ export class LedgerKeyAgent extends KeyAgentBase {
     };
   }
 
-  // TODO - enable node based apps to establish communication using node-hid
-  // TODO - enable bluetooth communication
-  async checkDeviceConnection(): Promise<AppAda> {
+  static async createTransport(activeTransport?: TransportWebHID): Promise<TransportWebHID> {
+    return await (activeTransport ? TransportWebHID.open(activeTransport.device) : TransportWebHID.request());
+  }
+
+  static async createDeviceConnection(activeTransport: Transport): Promise<AppAda> {
+    const deviceConnection = new AppAda(activeTransport);
+    // Perform app check to see if device can respond
+    await deviceConnection.getVersion();
+    return deviceConnection;
+  };
+
+  static async establishDeviceConnection({
+    deviceType,
+    communicationType
+  }: DeviceCommunicationType): Promise<AppAda>{
+    let transport;
+    if (deviceType !== DeviceType.Ledger) {
+      throw new TransportError('Device type not supported');
+    }
+    if (communicationType !== CommunicationType.Web) {
+      throw new TransportError('Communication method not supported');
+    }
     try {
-      if (!this.#deviceConnection.transport) {
+      transport = await LedgerKeyAgent.createTransport();
+      if (!transport || !transport.deviceModel) {
+        throw new TransportError('Transport failed');
+      }
+      const isSupportedLedgerModel = transport.deviceModel.id === 'nanoS' || transport.deviceModel.id === 'nanoX';
+      if (deviceType === DeviceType.Ledger && !isSupportedLedgerModel) {
+        throw new TransportError('Ledger device model not supported');
+      }
+      return await LedgerKeyAgent.createDeviceConnection(transport);
+    } catch (error) {
+      // If transport is established we need to close it so we can recover device from previous session
+      if (transport) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        transport.close();
+      }
+      throw error;
+    }
+  };
+
+  static async checkDeviceConnection(deviceConnection: AppAda, deviceCommunicationType: DeviceCommunicationType): Promise<AppAda> {
+    try {
+      if (!deviceConnection.transport) {
         throw new TransportError('Missing transport');
       }
       // Create / Check device connection with currently active transport
-      return await createDeviceConnection(this.#deviceConnection.transport);
+      return await LedgerKeyAgent.createDeviceConnection(deviceConnection.transport);
     } catch (error) {
       // Device disconnected -> re-establish connection
       if (error.name === 'DisconnectedDeviceDuringOperation') {
-        const deviceConenction = await establishDeviceConnection(this.#deviceCommunicationType);
-        this.#deviceConnection = deviceConenction;
-        return deviceConenction;
+        return await establishDeviceConnection(deviceCommunicationType);
       }
       throw error;
     }
   }
 
-  async getAppVersion(): Promise<GetVersionResponse> {
-    await this.checkDeviceConnection();
-    return await this.#deviceConnection.getVersion();
+  static async getAppVersion(deviceConnection: AppAda, deviceCommunicationType: DeviceCommunicationType): Promise<GetVersionResponse> {
+    const recoveredDeviceConnection = await LedgerKeyAgent.checkDeviceConnection(deviceConnection, deviceCommunicationType);
+    return await recoveredDeviceConnection.getVersion();
   }
 
-  async getExtendedAccountPublicKey(): Promise<Cardano.Bip32PublicKey> {
-    await this.checkDeviceConnection();
+  async getExtendedAccountPublicKey(deviceConnection: AppAda): Promise<Cardano.Bip32PublicKey> {
+    const recoveredDeviceConnection = await LedgerKeyAgent.checkDeviceConnection(deviceConnection, this.#deviceCommunicationType);
     const derivationPath = `1852'/1815'/${this.#accountIndex}'`;
-    const extendedPublicKey = await this.#deviceConnection.getExtendedPublicKey({
+    const extendedPublicKey = await recoveredDeviceConnection.getExtendedPublicKey({
       path: utils.str_to_path(derivationPath) // BIP32Path
     });
     const xPubHex = `${extendedPublicKey.publicKeyHex}${extendedPublicKey.chainCodeHex}`;
