@@ -34,7 +34,7 @@ export enum AddressType {
 }
 
 export enum DeviceType {
-  Ledger = 'Ledger',
+  Ledger = 'Ledger'
 }
 
 export enum CommunicationType {

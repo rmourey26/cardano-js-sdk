@@ -8,9 +8,9 @@ import {
   SignBlobResult
 } from './types';
 import { CSL, Cardano } from '@cardano-sdk/core';
-import AppAda from '@cardano-foundation/ledgerjs-hw-app-cardano';
 import { STAKE_KEY_DERIVATION_PATH, ownSignatureKeyPaths } from './util';
 import { TxInternals } from '../Transaction';
+import AppAda from '@cardano-foundation/ledgerjs-hw-app-cardano';
 
 export abstract class KeyAgentBase implements KeyAgent {
   abstract get networkId(): Cardano.NetworkId;

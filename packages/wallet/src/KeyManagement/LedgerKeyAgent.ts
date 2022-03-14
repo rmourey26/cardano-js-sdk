@@ -1,12 +1,18 @@
 import { Cardano, NotImplementedError } from '@cardano-sdk/core';
-import { DeviceCommunicationType, /*createDeviceConnection,*/ establishDeviceConnection } from './util/deviceConnection';
-import { TransportError } from './errors';
-import { GroupedAddress, KeyAgentType, SerializableLedgerKeyAgentData, SignBlobResult } from './types';
+import {
+  CommunicationType,
+  DeviceType,
+  GroupedAddress,
+  KeyAgentType,
+  SerializableLedgerKeyAgentData,
+  SignBlobResult
+} from './types';
+import { DeviceCommunicationType, establishDeviceConnection } from './util/deviceConnection';
 import { KeyAgentBase } from './KeyAgentBase';
+import { TransportError } from './errors';
 import AppAda, { GetVersionResponse, utils } from '@cardano-foundation/ledgerjs-hw-app-cardano';
 import TransportWebHID from '@ledgerhq/hw-transport-webhid';
 import type Transport from '@ledgerhq/hw-transport';
-import { CommunicationType, DeviceType } from './types';
 
 export interface LedgerKeyAgentProps {
   networkId: Cardano.NetworkId;
@@ -16,7 +22,7 @@ export interface LedgerKeyAgentProps {
 }
 
 export enum TransportType {
-  WebHid = 'webhid',
+  WebHid = 'webhid'
 }
 
 export class LedgerKeyAgent extends KeyAgentBase {
@@ -26,12 +32,7 @@ export class LedgerKeyAgent extends KeyAgentBase {
   readonly #deviceCommunicationType: DeviceCommunicationType;
   #extendedAccountPublicKey: Cardano.Bip32PublicKey;
 
-  constructor({
-    networkId,
-    accountIndex,
-    knownAddresses,
-    deviceCommunicationType
-  }: LedgerKeyAgentProps) {
+  constructor({ networkId, accountIndex, knownAddresses, deviceCommunicationType }: LedgerKeyAgentProps) {
     super();
     this.#accountIndex = accountIndex;
     this.#networkId = networkId;
@@ -78,12 +79,9 @@ export class LedgerKeyAgent extends KeyAgentBase {
     // Perform app check to see if device can respond
     await deviceConnection.getVersion();
     return deviceConnection;
-  };
+  }
 
-  static async establishDeviceConnection({
-    deviceType,
-    communicationType
-  }: DeviceCommunicationType): Promise<AppAda>{
+  static async establishDeviceConnection({ deviceType, communicationType }: DeviceCommunicationType): Promise<AppAda> {
     let transport;
     if (deviceType !== DeviceType.Ledger) {
       throw new TransportError('Device type not supported');
@@ -109,9 +107,12 @@ export class LedgerKeyAgent extends KeyAgentBase {
       }
       throw error;
     }
-  };
+  }
 
-  static async checkDeviceConnection(deviceConnection: AppAda, deviceCommunicationType: DeviceCommunicationType): Promise<AppAda> {
+  static async checkDeviceConnection(
+    deviceConnection: AppAda,
+    deviceCommunicationType: DeviceCommunicationType
+  ): Promise<AppAda> {
     try {
       if (!deviceConnection.transport) {
         throw new TransportError('Missing transport');
@@ -127,13 +128,22 @@ export class LedgerKeyAgent extends KeyAgentBase {
     }
   }
 
-  static async getAppVersion(deviceConnection: AppAda, deviceCommunicationType: DeviceCommunicationType): Promise<GetVersionResponse> {
-    const recoveredDeviceConnection = await LedgerKeyAgent.checkDeviceConnection(deviceConnection, deviceCommunicationType);
+  static async getAppVersion(
+    deviceConnection: AppAda,
+    deviceCommunicationType: DeviceCommunicationType
+  ): Promise<GetVersionResponse> {
+    const recoveredDeviceConnection = await LedgerKeyAgent.checkDeviceConnection(
+      deviceConnection,
+      deviceCommunicationType
+    );
     return await recoveredDeviceConnection.getVersion();
   }
 
   async getExtendedAccountPublicKey(deviceConnection: AppAda): Promise<Cardano.Bip32PublicKey> {
-    const recoveredDeviceConnection = await LedgerKeyAgent.checkDeviceConnection(deviceConnection, this.#deviceCommunicationType);
+    const recoveredDeviceConnection = await LedgerKeyAgent.checkDeviceConnection(
+      deviceConnection,
+      this.#deviceCommunicationType
+    );
     const derivationPath = `1852'/1815'/${this.#accountIndex}'`;
     const extendedPublicKey = await recoveredDeviceConnection.getExtendedPublicKey({
       path: utils.str_to_path(derivationPath) // BIP32Path
