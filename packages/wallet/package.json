@@ -23,12 +23,23 @@
     "prepack": "yarn build",
     "test": "jest -c ./jest.config.js",
     "test:e2e": "jest -c ./e2e.jest.config.js --runInBand",
+    "test:puppeteer": "jest -c ./jest-puppeteer.config.js --runInBand",
     "test:debug": "DEBUG=true yarn test"
   },
   "devDependencies": {
     "@cardano-sdk/util-dev": " 0.2.0",
+    "@types/expect-puppeteer": "^4.4.7",
+    "@types/jest-environment-puppeteer": "^5.0.0",
     "@types/pbkdf2": "^3.1.0",
-    "shx": "^0.3.3"
+    "@types/puppeteer": "^5.4.5",
+    "dotenv": "^16.0.0",
+    "jest-environment-puppeteer": "^6.0.3",
+    "jest-puppeteer": "^6.1.0",
+    "jest-webextension-mock": "^3.7.19",
+    "mock-browser": "^0.92.14",
+    "puppeteer": "^13.5.1",
+    "shx": "^0.3.3",
+    "webextension-polyfill": "^0.8.0"
   },
   "dependencies": {
     "@cardano-sdk/cip2": " 0.2.0",
