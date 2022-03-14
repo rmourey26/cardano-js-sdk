@@ -25,10 +25,6 @@ export interface LedgerKeyAgentProps {
   deviceCommunicationType: DeviceCommunicationType;
 }
 
-export enum TransportType {
-  WebHid = 'webhid'
-}
-
 export class LedgerKeyAgent extends KeyAgentBase {
   readonly #networkId: Cardano.NetworkId;
   readonly #accountIndex: number;
