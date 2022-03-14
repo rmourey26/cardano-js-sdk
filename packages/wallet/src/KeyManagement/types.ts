@@ -35,7 +35,6 @@ export enum AddressType {
 
 export enum DeviceType {
   Ledger = 'Ledger',
-  Trezor = 'Trezor'
 }
 
 export enum CommunicationType {

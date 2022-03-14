@@ -12,36 +12,30 @@ export interface LedgerKeyAgentProps {
   networkId: Cardano.NetworkId;
   accountIndex: number;
   knownAddresses: GroupedAddress[];
-  deviceConnection: AppAda;
   deviceCommunicationType: DeviceCommunicationType;
 }
 
 export enum TransportType {
   WebHid = 'webhid',
-  NodeHid = 'nodehid'
 }
 
-// TODO - extend KeyAgentBase
 export class LedgerKeyAgent extends KeyAgentBase {
   readonly #networkId: Cardano.NetworkId;
   readonly #accountIndex: number;
   readonly #knownAddresses: GroupedAddress[];
   readonly #deviceCommunicationType: DeviceCommunicationType;
   #extendedAccountPublicKey: Cardano.Bip32PublicKey;
-  #deviceConnection: AppAda;
 
   constructor({
     networkId,
     accountIndex,
     knownAddresses,
-    deviceConnection,
     deviceCommunicationType
   }: LedgerKeyAgentProps) {
     super();
     this.#accountIndex = accountIndex;
     this.#networkId = networkId;
     this.#knownAddresses = knownAddresses;
-    this.#deviceConnection = deviceConnection;
     this.#deviceCommunicationType = deviceCommunicationType;
   }
 
@@ -51,10 +45,6 @@ export class LedgerKeyAgent extends KeyAgentBase {
 
   get accountIndex(): number {
     return this.#accountIndex;
-  }
-
-  get deviceConnection(): AppAda {
-    return this.#deviceConnection;
   }
 
   get __typename(): KeyAgentType {
