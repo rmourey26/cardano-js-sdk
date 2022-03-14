@@ -1,6 +1,6 @@
-import { Cardano } from '@cardano-sdk/core';
+import { Cardano, NotImplementedError } from '@cardano-sdk/core';
 import { DeviceCommunicationType, /*createDeviceConnection,*/ establishDeviceConnection } from './util/deviceConnection';
-import { GenericError, GenericErrorType, TransportError } from './errors';
+import { TransportError } from './errors';
 import { GroupedAddress, KeyAgentType, SerializableLedgerKeyAgentData, SignBlobResult } from './types';
 import { KeyAgentBase } from './KeyAgentBase';
 import AppAda, { GetVersionResponse, utils } from '@cardano-foundation/ledgerjs-hw-app-cardano';
@@ -155,15 +155,14 @@ export class LedgerKeyAgent extends KeyAgentBase {
   }
 
   async signBlob(): Promise<SignBlobResult> {
-    throw new GenericError(GenericErrorType.NO_METHOD);
+    throw new NotImplementedError('signBlob');
   }
 
   async derivePublicKey(): Promise<Cardano.Ed25519PublicKey> {
-    throw new GenericError(GenericErrorType.NO_METHOD);
+    throw new NotImplementedError('derivePublicKey');
   }
 
-  // TODO - this should be moved / removed from KeyAgentBase. Root private key is stored on device in this case
   async exportRootPrivateKey(): Promise<Cardano.Bip32PrivateKey> {
-    throw new GenericError(GenericErrorType.NO_METHOD);
+    throw new NotImplementedError('exportRootPrivateKey');
   }
 }
