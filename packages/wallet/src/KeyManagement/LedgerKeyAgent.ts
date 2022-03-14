@@ -7,12 +7,16 @@ import {
   SerializableLedgerKeyAgentData,
   SignBlobResult
 } from './types';
-import { DeviceCommunicationType, establishDeviceConnection } from './util/deviceConnection';
 import { KeyAgentBase } from './KeyAgentBase';
 import { TransportError } from './errors';
 import AppAda, { GetVersionResponse, utils } from '@cardano-foundation/ledgerjs-hw-app-cardano';
 import TransportWebHID from '@ledgerhq/hw-transport-webhid';
 import type Transport from '@ledgerhq/hw-transport';
+
+export interface DeviceCommunicationType {
+  deviceType: DeviceType;
+  communicationType: CommunicationType;
+}
 
 export interface LedgerKeyAgentProps {
   networkId: Cardano.NetworkId;
@@ -122,7 +126,7 @@ export class LedgerKeyAgent extends KeyAgentBase {
     } catch (error) {
       // Device disconnected -> re-establish connection
       if (error.name === 'DisconnectedDeviceDuringOperation') {
-        return await establishDeviceConnection(deviceCommunicationType);
+        return await LedgerKeyAgent.establishDeviceConnection(deviceCommunicationType);
       }
       throw error;
     }
