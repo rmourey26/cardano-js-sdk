@@ -53,7 +53,7 @@ const waitForNewStakePoolIdAfterTx = (wallet: Wallet) =>
     )
   );
 
-describe('SingleAddressWallet/delegation', () => {
+xdescribe('SingleAddressWallet/delegation', () => {
   let rewardAccount: Cardano.RewardAccount;
   let wallet: Wallet;
 

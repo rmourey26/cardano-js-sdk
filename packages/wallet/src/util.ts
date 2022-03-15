@@ -1,81 +1,85 @@
-import * as cbor from 'cbor';
-import { ApiError, Bytes, Cbor, Paginate, PaginateError, WalletApi } from '@cardano-sdk/cip30';
+// import cbor from 'cbor';
+import {
+  ApiError,
+  // ApiError,
+  // Bytes,
+  Cbor,
+  Paginate,
+  WalletApi,
+  // PaginateError,
+  // Paginate, PaginateError,
+  handleMessages
+} from '@cardano-sdk/cip30';
+// import { Cardano } from '@cardano-sdk/core';
 import { Cardano } from '@cardano-sdk/core';
 import { Logger, dummyLogger } from 'ts-log';
 import { SingleAddressWallet } from '.';
-import { firstValueFrom } from 'rxjs';
+import {
+  firstValueFrom
+  // map
+} from 'rxjs';
 
 type Props = {
-  logger: Logger;
+  networkId: 0;
+  logger?: Logger;
 };
 
-export const createCip30WalletApiFromWallet = (wallet: SingleAddressWallet, _props?: Props): WalletApi => {
-  const logger = _props?.logger || dummyLogger;
+export const createCip30WalletApiFromWallet = (wallet: SingleAddressWallet, props: Props): WalletApi => {
+  const logger = props.logger || dummyLogger;
   return {
     getBalance: async (): Promise<Cbor> => {
-      logger.info('getting balance');
+      logger.debug('getting balance');
       try {
-        await firstValueFrom(wallet.balance.available$);
-        return cbor.encode(wallet.balance.available$.value).toString('hex');
+        return wallet.balance.available$.value as unknown as string;
+        // TODO: uncomment and fix failure
+        // return cbor.encode(wallet.balance.available$.value).toString('hex');
       } catch (error) {
         logger.error(error);
         throw error;
       }
     },
     getChangeAddress: async (): Promise<Cbor> => {
-      logger.info('getting changeAddres');
+      logger.debug('getting changeAddress');
 
-      await firstValueFrom(wallet.addresses$);
       const changeAddresss = wallet.addresses$.value?.find((e) => e.type === 1);
 
       if (!changeAddresss) {
         throw new Error('could not find a change address');
       }
-
-      return cbor.encode(changeAddresss?.address.toString).toString('hex');
+      return changeAddresss.address.toString();
+      // return cbor.encode(changeAddresss?.address.toString).toString('hex');
     },
     getNetworkId: async (): Promise<Cardano.NetworkId> => {
-      logger.info('getting networkId');
-
-      try {
-        const a = await firstValueFrom(wallet.addresses$);
-        return a[0].networkId;
-      } catch (error) {
-        logger.error(error);
-        throw ApiError;
-      }
+      logger.debug('getting networkId');
+      return Promise.resolve(props.networkId);
     },
-    getRewardAddresses: async (): Promise<Cbor[]> => {
+    /* getRewardAddresses: async (): Promise<Cbor[]> => {
       logger.info('getting reward addresses');
 
       const rewardAccounts = await firstValueFrom(wallet.delegation.rewardAccounts$);
       return rewardAccounts.map((a) => cbor.encode(a.address.toString).toString('hex'));
-    },
+    },*/
     getUnusedAddresses: async (): Promise<Cbor[]> => {
       logger.info('getting unused addresses');
       try {
         const addresses = await firstValueFrom(wallet.addresses$);
-        const cborAddresses = addresses?.map((addr) => cbor.encode(addr).toString('hex'));
-        if (!cborAddresses) {
+        const cardanoAddresses = addresses.map((addr) => addr.address as unknown as string);
+        if (!cardanoAddresses) {
           throw new ApiError(400, 'Could not find any addresses');
         }
-        return cborAddresses;
+        return Promise.resolve(cardanoAddresses);
       } catch (error) {
         logger.error(error);
         throw error;
       }
     },
-    getUsedAddresses: async (_paginate?: Paginate): Promise<Cbor[]> => {
-      logger.info('getting used addresses', _paginate);
-      // const confirmedAddreesses = wallet.transactions.outgoing.confirmed$.pipe(map((tx) => tx.body.inputs));
-
-      // todo: return correctly
+    /* getUsedAddresses: async (_paginate?: Paginate): Promise<Cbor[]> => {
       const returnedAddresses = [];
       if (_paginate && _paginate.limit > returnedAddresses.length)
         throw new PaginateError(returnedAddresses.length, 'Pagination limit exceeds returned addresses');
       // Otherwise slice the addresses by page/limit
       return Promise.resolve(['usedAddresses']);
-    },
+    },*/
     getUtxos: async (amount?: Cbor, _paginate?: Paginate): Promise<Cardano.Utxo[] | undefined> => {
       await firstValueFrom(wallet.utxo.available$);
       const allUtxos = wallet.utxo.available$.value;
@@ -98,9 +102,11 @@ export const createCip30WalletApiFromWallet = (wallet: SingleAddressWallet, _pro
           }, [] as Cardano.Utxo[]);
         logger.info('filteredByAmount', filteredByAmount);
       }
+
+      // TODO: determine how to paginate effectively
       return Promise.resolve(allUtxos);
-    },
-    signData: (addr: Cbor, sigStructure: string): Promise<Bytes> => {
+    }
+    /* signData: (addr: Cbor, sigStructure: string): Promise<Bytes> => {
       // todo: return correctly
       logger.info('signedData', [addr, sigStructure]);
       return Promise.resolve('signedData');
@@ -120,6 +126,11 @@ export const createCip30WalletApiFromWallet = (wallet: SingleAddressWallet, _pro
 
         throw error;
       }
-    }
+    }*/
   } as WalletApi;
+};
+
+export const createWalletApiAndHandleMessages = (wallet: SingleAddressWallet, props: Props) => {
+  const walletApi = createCip30WalletApiFromWallet(wallet, props);
+  handleMessages(walletApi, props.logger);
 };

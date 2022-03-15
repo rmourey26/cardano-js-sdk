@@ -3,7 +3,7 @@ import { KeyManagement, SingleAddressWallet, Wallet } from '../../../src';
 import { assetProvider, keyAgentReady, stakePoolSearchProvider, timeSettingsProvider, walletProvider } from '../config';
 import { combineLatest, filter, firstValueFrom, map } from 'rxjs';
 
-describe('SingleAddressWallet/delegation', () => {
+xdescribe('SingleAddressWallet/delegation', () => {
   let wallet: Wallet;
 
   beforeAll(async () => {
