@@ -1,4 +1,5 @@
 import { Cardano } from '@cardano-sdk/core';
+import AppAda from '@cardano-foundation/ledgerjs-hw-app-cardano';
 import { TxInternals } from '../Transaction';
 
 export interface SignBlobResult {
@@ -77,6 +78,7 @@ export interface SerializableLedgerKeyAgentData extends SerializableKeyAgentData
   knownAddresses: GroupedAddress[];
   extendedAccountPublicKey: Cardano.Bip32PublicKey;
   communicationType: CommunicationType;
+  deviceConnection?: AppAda;
 }
 
 export type SerializableKeyAgentData = SerializableInMemoryKeyAgentData | SerializableLedgerKeyAgentData;

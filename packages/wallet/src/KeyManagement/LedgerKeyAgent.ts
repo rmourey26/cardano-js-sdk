@@ -78,11 +78,12 @@ export class LedgerKeyAgent extends KeyAgentBase {
   get serializableData(): SerializableLedgerKeyAgentData {
     return {
       __typename: KeyAgentType.Ledger,
+      networkId: this.networkId,
       accountIndex: this.#accountIndex,
-      communicationType: this.#communicationType,
-      extendedAccountPublicKey: this.#extendedAccountPublicKey,
       knownAddresses: this.#knownAddresses,
-      networkId: this.networkId
+      extendedAccountPublicKey: this.#extendedAccountPublicKey,
+      communicationType: this.#communicationType,
+      deviceConnection: this.#deviceConnection,
     };
   }
 
@@ -179,11 +180,7 @@ export class LedgerKeyAgent extends KeyAgentBase {
   }
 
   async getExtendedAccountPublicKey(): Promise<Cardano.Bip32PublicKey> {
-    return await LedgerKeyAgent.getXpub({
-      accountIndex: this.#accountIndex,
-      communicationType: this.#communicationType,
-      deviceConnection: this.#deviceConnection
-    });
+    return this.#extendedAccountPublicKey;
   }
 
   async signBlob(): Promise<SignBlobResult> {

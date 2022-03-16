@@ -23,6 +23,7 @@
     "mainnet:down": "docker-compose -p sdk-mainnet down",
     "test": "yarn workspaces run test",
     "test:e2e": "yarn workspaces run test:e2e",
+    "test:hw:chrome": "yarn --cwd ./packages/wallet run test:hw:chrome",
     "test:debug": "DEBUG=true yarn workspaces run test",
     "testnet:up": "DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 OGMIOS_PORT=1338 NETWORK=testnet docker-compose -p sdk-testnet up",
     "testnet:down": "docker-compose -p sdk-testnet down",
