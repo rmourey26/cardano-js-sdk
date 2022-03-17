@@ -15,7 +15,6 @@ export const handleMessages = (walletApi: WalletApi, logger: Logger = dummyLogge
       return;
     }
 
-    const returnValue = await walletMethod(...msg.arguments);
-    return returnValue;
+    return walletMethod(...msg.arguments);
   });
 };
